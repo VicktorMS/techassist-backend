@@ -1,20 +1,25 @@
 // app.js
 import express from "express";
 import path from "path";
-import { fileURLToPath } from 'url';
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import router from "./routes/root.route.js"; 
+import { logger } from "./middleware/logger.js";
+import { getDirname } from "./utils/utils.js";
+import { errorHandler } from "./middleware/erroHandler.js";
+import { corsOptions } from "./config/corsOptions.js";
 
 dotenv.config();
 
 const app = express();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = getDirname(import.meta.url);
 
 // Middlewares
-app.use(cors());
+app.use(cors(corsOptions));
+app.use(logger);
+app.use(cookieParser());
 app.use(express.json());
 
 app.use('/', express.static(path.join(__dirname, 'public')));
@@ -34,6 +39,8 @@ app.all('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
