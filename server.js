@@ -1,16 +1,19 @@
-// app.js
+import dotenv from "dotenv";
 import express from "express";
 import path from "path";
-import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
 import router from "./routes/root.route.js"; 
-import { logger } from "./middleware/logger.js";
+import { connectDb } from "./config/dbConn.js";
+import { logger, logEvents } from "./middleware/logger.js";
 import { getDirname } from "./utils/utils.js";
 import { errorHandler } from "./middleware/erroHandler.js";
 import { corsOptions } from "./config/corsOptions.js";
 
 dotenv.config();
+
+connectDb();
 
 const app = express();
 
@@ -42,6 +45,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+mongoose.connection.once('open', () => {
+    console.log("Connection with MongoDB established successfully");
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+})
+
+mongoose.connection.on('error', err => {
+    console.log(err);
+    logEvents(`${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`, 'mongoErrLog.log');
+})
